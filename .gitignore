@@ -24,3 +24,4 @@ local
 .perl-*.installed
 .perl-*.tested
 .perl-version
+*.sw?
