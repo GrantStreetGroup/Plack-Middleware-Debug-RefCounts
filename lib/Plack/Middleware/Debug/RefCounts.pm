@@ -7,7 +7,7 @@ use v5.10.1;
 use strict;
 use warnings;
 
-use parent 'Plack::Middleware';
+use parent 'Plack::Middleware::Debug::Base';
 use Data::Dumper;
 use Devel::Gladiator;
 use Env          qw($PLACK_MW_DEBUG_REFCOUNTS_DUMP_RE);
@@ -51,24 +51,28 @@ our $Arena_Refs = [];
 
 =head1 METHODS
 
-=head2 call
+=head2 run
 
-The standard middleware interface. Runs the reference count comparison
+The standard debug middleware interface. Runs the reference count comparison
 as late as possible (ie. during cleanup if supported).
 
 =cut
 
-sub call {
-    my ($self, $env) = @_;
+sub run {
+    my ($self, $env, $panel) = @_;
 
     return Plack::Util::response_cb( $self->app->($env), sub {
         if ($env->{'psgix.cleanup'} ) {
             push @{ $env->{'psgix.cleanup.handlers'} }, sub {
-                return $self->update_arena_counts();
+                $panel->content(
+                    $self->render_lines( [ $self->update_arena_counts() ] )
+                );
             };
         }
         else {
-            return $self->update_arena_counts();
+            $panel->content(
+                $self->render_lines( [ $self->update_arena_counts() ] )
+            );
         }
 
     } );
@@ -76,7 +80,9 @@ sub call {
 
 =head2 update_arena_counts
 
-Updates the arena counts and displays the results via L</compare_arena_counts>.
+    my @diff_lines = $self->update_arena_counts;
+
+Updates the arena counts and returns the lines via L</compare_arena_counts>.
 
 =cut
 
@@ -84,7 +90,10 @@ sub update_arena_counts {
     my $self = shift;
     my $ref_a = $Arena_Refs;
     ($Arena_Refs, my $diff_list) = $self->calculate_arena_refs($ref_a);
-    $self->compare_arena_counts($diff_list) if $ref_a;
+
+    if ($ref_a) { return $self->compare_arena_counts($diff_list) }
+
+    return;
 }
 
 =head2 calculate_arena_refs
@@ -180,8 +189,10 @@ sub calculate_arena_refs {
 
     $self->compare_arena_counts(\%diff_list);
 
-Using a diff list from L</calculate_arena_refs>, this displays the new ref counts.
-Anything displayed here has either shrunk or grown the variables within the arena.
+Using a diff list from L</calculate_arena_refs>, this displays the new ref
+counts, and returns those displayed lines.
+
+Anything listed here has either shrunk or grown the variables within the arena.
 
 Example output:
 
@@ -201,16 +212,18 @@ Example output:
 
 sub compare_arena_counts {
     my ($self, $diff_list) = @_;
-    say STDERR "=== Reference growth counts ===";
+
+    my @lines = ( "=== Reference growth counts ===\n" );
 
     foreach my $key (sort keys %$diff_list) {
         my ($diff, $count_a, $count_b) = @{ $diff_list->{$key} };
 
         next unless $diff;
-        printf STDERR "%+-5d (diff) => %7d (now) => %-s\n", $diff, $count_b, $key;
+        push @lines, sprintf "%+-5d (diff) => %7d (now) => %-s\n", $diff, $count_b, $key;
     }
 
-    say STDERR '';
+    #print STDERR $_ for @lines, "\n";
+    return @lines;
 }
 
 =head1 SEE ALSO
