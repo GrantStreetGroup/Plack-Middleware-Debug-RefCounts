@@ -29,12 +29,47 @@ version 0.90
 
     use Plack::Middleware::Debug::RefCounts;
 
-    enable 'Plack::Middleware::Debug::RefCounts';
-    # FIXME: Fill with method examples
+    enable 'Debug', panels => [ 'RefCounts', @any_other_panels ];
 
 =head1 DESCRIPTION
 
-FIXME: Add description
+This module aims to provide debugging tools to help identify memory leaks.
+
+It uses L<Devel::Gladiator> to compare reference counts at the beginning and end
+of requests.
+
+To get the most out of this module, you should:
+
+=over
+
+=item 1. Run you application with a single worker process.
+
+The middleware attempts not to unduly accumulate references. As such, it tracks
+references counts in a simple package variable (L</Arena_Refs>), which does not
+scale to multiple processes.
+
+=item 2. Identify what's growing unexpectedly, I<then> dive in.
+
+See the explanation under L<PLACK_MW_DEBUG_REFCOUNTS_DUMP_RE>.
+
+Generally, just be aware that you're potentially looking at B<A LOT> of
+information, and trying to debug it takes up a lot of resources. System
+errors may occur if you're too aggressive.
+
+=back
+
+=head1 ENVIRONMENT VARIABLES
+
+=head2 PLACK_MW_DEBUG_REFCOUNTS_DUMP_RE
+
+A regex to be matched against changing counts in L</calculate_arena_refs>.
+If a variable's ref type (or class) matches it, the variable will be dumped to
+C<STDERR>. Only newly-discovered variables are dumped.
+
+B<WARNING:> Dumping certain variables may crash your process, because there is
+so much to dump. Look at the ref counts first to figure out what you want to
+dump, and try to work around any bizarre behaviors.
+
 =head1 PACKAGE VARIABLES
 
 =head2 Arena_Refs
@@ -105,15 +140,8 @@ catalogs all non-SCALAR/REFs into ref types and memory locations.
 Accepts an old ref list (from a previous call) as input,
 and returns both a new ref list and diff list.
 
-I<After> the first (initializing) run, if
-C<$ENV{PLACK_MIDDLEWARE_DEBUG_REFCOUNTS_DUMP_RE}> is set, it is intepreted as a
-regular expression, and matched against the ref type (or class) of the variable.
-If it matches, the variable is dumped to C<STDERR> in a sandbox.
-Only newly-discovered variables are dumped.
-
-B<WARNING:> Dumping certain variables may crash your process, because there is
-so much to dump. Look at the ref counts first to figure out what you want to
-dump, and try to work around any bizarre behaviors.
+I<After> the first (initializing) run, if L</PLACK_MW_DEBUG_REFCOUNTS_DUMP_RE>
+is set, newly discovered matching variables will be dumped to C<STDERR>.
 
 =cut
 
@@ -229,6 +257,10 @@ sub compare_arena_counts {
 =head1 SEE ALSO
 
 =over
+
+=item L<Devel::Gladiator>
+
+The tool used for leak hunting.
 
 =item L<Plack::Middleware::Debug>
 
