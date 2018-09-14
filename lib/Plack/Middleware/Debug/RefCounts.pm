@@ -250,7 +250,7 @@ sub compare_arena_counts {
         push @lines, sprintf "%+-5d (diff) => %7d (now) => %-s\n", $diff, $count_b, $key;
     }
 
-    #print STDERR $_ for @lines, "\n";
+    print STDERR $_ for @lines, "\n";
     return @lines;
 }
 

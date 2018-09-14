@@ -1,5 +1,6 @@
 use warnings;
 use strict;
+use Capture::Tiny qw(capture);
 use Plack::Test;
 use Plack::Builder;
 use HTTP::Request::Common;
@@ -16,7 +17,9 @@ $app = builder {
 };
 test_psgi $app, sub {
     my $cb  = shift;
-    my $res = $cb->(GET '/');
+    my ($out, $err, $res) = capture { $cb->(GET '/') };
+    is   $out, '', "middleware adds nothing to STDOUT";
+    isnt $err, '', "middleware debugs to STDERR";
     is $res->code, 200, 'response status 200';
     like $res->content,
         qr/=== Reference growth counts ===/,
