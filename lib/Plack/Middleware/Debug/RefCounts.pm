@@ -56,6 +56,15 @@ Generally, just be aware that you're potentially looking at B<A LOT> of
 information, and trying to debug it takes up a lot of resources. System
 errors may occur if you're too aggressive.
 
+=item 3. Repeat tests to make sure they are consistently leaking memory.
+
+Objects can be loaded the first time you load a specific web page, and increase
+memory usage.  The key is that they don't continue to increase memory after
+repeated hits.
+
+Preloading data prior to forking can help with this problem, but it can be hard
+to capture every single object or singleton that needs to be loaded.
+
 =back
 
 =head1 ENVIRONMENT VARIABLES
