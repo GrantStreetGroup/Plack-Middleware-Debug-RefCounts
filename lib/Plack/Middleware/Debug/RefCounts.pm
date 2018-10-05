@@ -116,7 +116,7 @@ as late as possible (ie. during cleanup if supported).
 sub run {
     my ($self, $env, $panel) = @_;
 
-    return Plack::Util::response_cb( $self->app->($env), sub {
+    return sub {
         if ($env->{'psgix.cleanup'} && $PLACK_MW_DEBUG_REFCOUNTS_ON_CLEANUP) {
             $panel->content(<<'EOP');
 Because $PLACK_MW_DEBUG_REFCOUNTS_ON_CLEANUP is true, refcounts are being
@@ -132,7 +132,7 @@ EOP
             );
         }
 
-    } );
+    };
 }
 
 =head2 update_arena_counts
