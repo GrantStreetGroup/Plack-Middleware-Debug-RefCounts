@@ -10,7 +10,10 @@ use warnings;
 use parent 'Plack::Middleware::Debug::Base';
 use Data::Dumper;
 use Devel::Gladiator;
-use Env          qw($PLACK_MW_DEBUG_REFCOUNTS_DUMP_RE);
+use Env qw(
+    $PLACK_MW_DEBUG_REFCOUNTS_DUMP_RE
+    $PLACK_MW_DEBUG_REFCOUNTS_ON_CLEANUP
+);
 use Scalar::Util qw( refaddr );
 
 use namespace::clean;  # don't export the above
@@ -50,7 +53,7 @@ scale to multiple processes.
 
 =item 2. Identify what's growing unexpectedly, I<then> dive in.
 
-See the explanation under L<PLACK_MW_DEBUG_REFCOUNTS_DUMP_RE>.
+See the explanation under L</PLACK_MW_DEBUG_REFCOUNTS_DUMP_RE>.
 
 Generally, just be aware that you're potentially looking at B<A LOT> of
 information, and trying to debug it takes up a lot of resources. System
@@ -79,6 +82,14 @@ B<WARNING:> Dumping certain variables may crash your process, because there is
 so much to dump. Look at the ref counts first to figure out what you want to
 dump, and try to work around any bizarre behaviors.
 
+=head2 PLACK_MW_DEBUG_REFCOUNTS_ON_CLEANUP
+
+A boolean, defaulting to C<0>.
+
+If the PSGI application supports cleanup and this variable is true, then ref
+counting will happen during cleanup. This prevents rendering this refcount
+information in the debug panel.
+
 =head1 PACKAGE VARIABLES
 
 =head2 Arena_Refs
@@ -106,11 +117,13 @@ sub run {
     my ($self, $env, $panel) = @_;
 
     return Plack::Util::response_cb( $self->app->($env), sub {
-        if ($env->{'psgix.cleanup'} ) {
+        if ($env->{'psgix.cleanup'} && $PLACK_MW_DEBUG_REFCOUNTS_ON_CLEANUP) {
+            $panel->content(<<'EOP');
+Because $PLACK_MW_DEBUG_REFCOUNTS_ON_CLEANUP is true, refcounts are being
+tabulated <em>after</em> rendering. See the STDERR for details.
+EOP
             push @{ $env->{'psgix.cleanup.handlers'} }, sub {
-                $panel->content(
-                    $self->render_lines( [ $self->update_arena_counts() ] )
-                );
+                $self->update_arena_counts();
             };
         }
         else {
