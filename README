@@ -31,11 +31,21 @@ DESCRIPTION
 
     2. Identify what's growing unexpectedly, then dive in.
 
-      See the explanation under PLACK_MW_DEBUG_REFCOUNTS_DUMP_RE.
+      See the explanation under "PLACK_MW_DEBUG_REFCOUNTS_DUMP_RE".
 
       Generally, just be aware that you're potentially looking at A LOT of
       information, and trying to debug it takes up a lot of resources.
       System errors may occur if you're too aggressive.
+
+    3. Repeat tests to make sure they are consistently leaking memory.
+
+      Objects can be loaded the first time you load a specific web page,
+      and increase memory usage. The key is that they don't continue to
+      increase memory after repeated hits.
+
+      Preloading data prior to forking can help with this problem, but it
+      can be hard to capture every single object or singleton that needs to
+      be loaded.
 
 ENVIRONMENT VARIABLES
 
@@ -49,6 +59,14 @@ ENVIRONMENT VARIABLES
     WARNING: Dumping certain variables may crash your process, because
     there is so much to dump. Look at the ref counts first to figure out
     what you want to dump, and try to work around any bizarre behaviors.
+
+ PLACK_MW_DEBUG_REFCOUNTS_ON_CLEANUP
+
+    A boolean, defaulting to 0.
+
+    If the PSGI application supports cleanup and this variable is true,
+    then ref counting will happen during cleanup. This prevents rendering
+    this refcount information in the debug panel.
 
 PACKAGE VARIABLES
 
