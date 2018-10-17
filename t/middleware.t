@@ -27,7 +27,7 @@ test_psgi $app, sub {
     is $res->code, 200, 'response status 200';
     my $html = $res->content;
     unlike $html,
-        qr/=== Reference growth counts ===/,
+        qr!Now</th>!,
         "HTML does not contain ref counts panel (first time)";
 
     ($out, $err, $res) = capture { $cb->(GET '/') };
@@ -36,7 +36,7 @@ test_psgi $app, sub {
     is $res->code, 200, 'response status 200';
     $html = $res->content;
     like $html,
-        qr/=== Reference growth counts ===/,
+        qr!Now</th>!,
         "HTML contains ref counts panel";
 
     {

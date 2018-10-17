@@ -18,7 +18,7 @@ sub reset_counts () {
 {
     reset_counts;
     my $array_ref = [ qw(1 2 3) ];
-    my ($out, $err, @changes) = capture {
+    my ($out, $err, $diff_list) = capture {
         Plack::Middleware::Debug::RefCounts->update_arena_counts;
     };
     fail "Unexpected output $out" if $out;
@@ -27,11 +27,10 @@ sub reset_counts () {
         qr/Reference growth counts/,
         qr/\+1 \s+ \(diff\) \s+ => \s+ \d+ \s+ \(now\) \s+ => \s+ ARRAY/x,
     ) {
-        like shift(@changes), $message_rx, "return checks out";
-        like $err,            $message_rx, "STDERR checks out";
+        like $err, $message_rx, "STDERR checks out";
     }
 
-    is scalar(@changes), 0, "No unexpected changes";
+    is scalar(grep { $_->[0] == 1 } values %$diff_list), 1, "No unexpected changes";
 }
 
 {
@@ -43,7 +42,7 @@ sub reset_counts () {
     reset_counts;
     my $new_ref = bless \$value, $class;
 
-    my ($out, $err, @changes) = capture {
+    my ($out, $err, $diff_list) = capture {
         Plack::Middleware::Debug::RefCounts->update_arena_counts
     };
     fail "Unexpected output $out" if $out;

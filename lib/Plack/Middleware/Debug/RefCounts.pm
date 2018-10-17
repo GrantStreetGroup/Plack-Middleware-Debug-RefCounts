@@ -113,6 +113,33 @@ as late as possible (ie. during cleanup if supported).
 
 =cut
 
+# A T:MT template version of compare_arena_counts
+my $refcount_html_template = __PACKAGE__->build_template(<<'EOTMPL');
+<table>
+    <thead>
+        <tr>
+            <th style="text-align: right;">Prev</th>
+            <th style="text-align: right;">Diff</th>
+            <th style="text-align: right;">Now</th>
+            <th>Class/Type</th>
+        </tr>
+    </thead>
+    <tbody>
+% my $diff_list = $_[0];
+% foreach my $key (sort keys %$diff_list) {
+%     my ($diff, $count_a, $count_b) = @{ $diff_list->{$key} };
+%     next unless $diff;
+        <tr style="background-color: <%= $diff > 0 ? '#8f8' : '#f88' %>;">
+            <td style="text-align: right;"><%= $count_a %></td>
+            <td style="text-align: right;"><%= sprintf "%+-d", $diff %></td>
+            <td style="text-align: right;"><%= $count_b %></td>
+            <td><%= $key %></td>
+        </tr>
+% }
+    </tbody>
+</table>
+EOTMPL
+
 sub run {
     my ($self, $env, $panel) = @_;
 
@@ -123,13 +150,14 @@ Because $PLACK_MW_DEBUG_REFCOUNTS_ON_CLEANUP is true, refcounts are being
 tabulated <em>after</em> rendering. See the STDERR for details.
 EOP
             push @{ $env->{'psgix.cleanup.handlers'} }, sub {
-                $self->update_arena_counts();
+                $self->update_arena_counts;
             };
         }
         else {
+            my $diff_list = $self->update_arena_counts;
             $panel->content(
-                $self->render_lines( [ $self->update_arena_counts() ] )
-            );
+                $self->render($refcount_html_template, $diff_list)
+            ) if $diff_list;
         }
 
     };
@@ -137,9 +165,10 @@ EOP
 
 =head2 update_arena_counts
 
-    my @diff_lines = $self->update_arena_counts;
+    \%diff_list = $self->update_arena_counts;
 
-Updates the arena counts and returns the lines via L</compare_arena_counts>.
+Updates the arena counts and returns the diff hashes via L</compare_arena_counts>.
+Returns C<undef> the first time ran, since there's nothing to compare to.
 
 =cut
 
@@ -147,9 +176,10 @@ sub update_arena_counts {
     my $self = shift;
     my $is_first  = !%$Arena_Refs;
     my $diff_list = $self->calculate_arena_refs;
+    return if $is_first;
 
-    return $self->compare_arena_counts($diff_list) unless $is_first;
-    return;
+    $self->compare_arena_counts($diff_list);
+    return $diff_list;
 }
 
 =head2 calculate_arena_refs
@@ -239,10 +269,10 @@ sub calculate_arena_refs {
 
 =head2 compare_arena_counts
 
-    $self->compare_arena_counts(\%diff_list);
+    @lines = $self->compare_arena_counts(\%diff_list);
 
 Using a diff list from L</calculate_arena_refs>, this displays the new ref
-counts, and returns those displayed lines.
+counts on STDERR, and returns those displayed lines.
 
 Anything listed here has either shrunk or grown the variables within the arena.
 
