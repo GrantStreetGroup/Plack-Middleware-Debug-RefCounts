@@ -87,19 +87,19 @@ METHODS
 
  update_arena_counts
 
-        my @diff_lines = $self->update_arena_counts;
+        ($is_first, \%diff_list) = $self->update_arena_counts;
 
-    Updates the arena counts and returns the lines via
+    Updates the arena counts and returns a boolean indicating whether this
+    is the first runthrough and a diff of hashes via
     "compare_arena_counts".
 
  calculate_arena_refs
 
-        (\@ref_b, \%diff_list) = $self->calculate_arena_refs(\@ref_a);
+        \%diff_list = $self->calculate_arena_refs;
 
     Walks the arena (of Perl variables) via "walk_arena" in
     Devel::Gladiator, and catalogs all non-SCALAR/REFs into ref types and
-    memory locations. Accepts an old ref list (from a previous call) as
-    input, and returns both a new ref list and diff list.
+    memory locations. Returns a diff list hashref.
 
     After the first (initializing) run, if
     "PLACK_MW_DEBUG_REFCOUNTS_DUMP_RE" is set, newly discovered matching
@@ -107,10 +107,10 @@ METHODS
 
  compare_arena_counts
 
-        $self->compare_arena_counts(\%diff_list);
+        @lines = $self->compare_arena_counts(\%diff_list);
 
     Using a diff list from "calculate_arena_refs", this displays the new
-    ref counts, and returns those displayed lines.
+    ref counts on STDERR, and returns those displayed lines.
 
     Anything listed here has either shrunk or grown the variables within
     the arena.

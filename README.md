@@ -86,21 +86,21 @@ as late as possible (ie. during cleanup if supported).
 ## update\_arena\_counts
 
 ```perl
-my @diff_lines = $self->update_arena_counts;
+($is_first, \%diff_list) = $self->update_arena_counts;
 ```
 
-Updates the arena counts and returns the lines via ["compare\_arena\_counts"](#compare_arena_counts).
+Updates the arena counts and returns a boolean indicating whether this is the
+first runthrough and a diff of hashes via ["compare\_arena\_counts"](#compare_arena_counts).
 
 ## calculate\_arena\_refs
 
 ```perl
-(\@ref_b, \%diff_list) = $self->calculate_arena_refs(\@ref_a);
+\%diff_list = $self->calculate_arena_refs;
 ```
 
 Walks the arena (of Perl variables) via ["walk\_arena" in Devel::Gladiator](https://metacpan.org/pod/Devel::Gladiator#walk_arena), and
-catalogs all non-SCALAR/REFs into ref types and memory locations.
-Accepts an old ref list (from a previous call) as input,
-and returns both a new ref list and diff list.
+catalogs all non-SCALAR/REFs into ref types and memory locations.  Returns a
+diff list hashref.
 
 _After_ the first (initializing) run, if ["PLACK\_MW\_DEBUG\_REFCOUNTS\_DUMP\_RE"](#plack_mw_debug_refcounts_dump_re)
 is set, newly discovered matching variables will be dumped to `STDERR`.
@@ -108,11 +108,11 @@ is set, newly discovered matching variables will be dumped to `STDERR`.
 ## compare\_arena\_counts
 
 ```perl
-$self->compare_arena_counts(\%diff_list);
+@lines = $self->compare_arena_counts(\%diff_list);
 ```
 
 Using a diff list from ["calculate\_arena\_refs"](#calculate_arena_refs), this displays the new ref
-counts, and returns those displayed lines.
+counts on STDERR, and returns those displayed lines.
 
 Anything listed here has either shrunk or grown the variables within the arena.
 
