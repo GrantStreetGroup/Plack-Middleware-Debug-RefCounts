@@ -154,10 +154,21 @@ EOP
             };
         }
         else {
-            my $diff_list = $self->update_arena_counts;
-            $panel->content(
-                $self->render($refcount_html_template, $diff_list)
-            ) if $diff_list;
+            my ($is_first, $diff_list) = $self->update_arena_counts;
+            if ($is_first) {
+                $panel->content(<<'EOP');
+This was the first load. Make sure you only have one process and load
+another page to see refcounts.
+EOP
+            }
+            elsif (!$diff_list) {
+                $panel->content('No changes \o/');
+            }
+            else {
+                $panel->content(
+                    $self->render($refcount_html_template, $diff_list)
+                );
+            }
         }
 
     };
@@ -165,10 +176,10 @@ EOP
 
 =head2 update_arena_counts
 
-    \%diff_list = $self->update_arena_counts;
+    ($is_first, \%diff_list) = $self->update_arena_counts;
 
-Updates the arena counts and returns the diff hashes via L</compare_arena_counts>.
-Returns C<undef> the first time ran, since there's nothing to compare to.
+Updates the arena counts and returns a boolean indicating whether this is the
+first runthrough and a diff of hashes via L</compare_arena_counts>.
 
 =cut
 
@@ -176,10 +187,12 @@ sub update_arena_counts {
     my $self = shift;
     my $is_first  = !%$Arena_Refs;
     my $diff_list = $self->calculate_arena_refs;
-    return if $is_first;
 
-    $self->compare_arena_counts($diff_list);
-    return $diff_list;
+    if (!$is_first) {
+        $self->compare_arena_counts($diff_list);
+    }
+
+    return $is_first, $diff_list;
 }
 
 =head2 calculate_arena_refs

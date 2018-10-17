@@ -26,9 +26,10 @@ test_psgi $app, sub {
     is   $err, '', "middleware adds nothing to STDERR (first time)";
     is $res->code, 200, 'response status 200';
     my $html = $res->content;
+    like $html, qr/This was the first load/, "HTML indicates first time";
     unlike $html,
         qr!Now</th>!,
-        "HTML does not contain ref counts panel (first time)";
+        "HTML does not contain ref counts the first time";
 
     ($out, $err, $res) = capture { $cb->(GET '/') };
     is   $out, '', "middleware adds nothing to STDOUT";
@@ -38,6 +39,8 @@ test_psgi $app, sub {
     like $html,
         qr!Now</th>!,
         "HTML contains ref counts panel";
+
+    # TODO would be nice to test behavior when nothing changes
 
     {
         local $psgix_cleanup = 1;

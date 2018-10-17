@@ -16,9 +16,17 @@ sub reset_counts () {
 }
 
 {
+    my ($out, $err, $is_first, $diff_list) = capture {
+        Plack::Middleware::Debug::RefCounts->update_arena_counts;
+    };
+    fail "Unexpected output $out" if $out;
+    is $err, '', "No STDERR on first run";
+    ok $is_first, "Reported being first";
+    ok $diff_list, "diff list returned on first run";
+
     reset_counts;
     my $array_ref = [ qw(1 2 3) ];
-    my ($out, $err, $diff_list) = capture {
+    ($out, $err, $is_first, $diff_list) = capture {
         Plack::Middleware::Debug::RefCounts->update_arena_counts;
     };
     fail "Unexpected output $out" if $out;
@@ -30,6 +38,7 @@ sub reset_counts () {
         like $err, $message_rx, "STDERR checks out";
     }
 
+    ok !$is_first, "later runs are not first";
     is scalar(grep { $_->[0] == 1 } values %$diff_list), 1, "No unexpected changes";
 }
 
@@ -42,7 +51,7 @@ sub reset_counts () {
     reset_counts;
     my $new_ref = bless \$value, $class;
 
-    my ($out, $err, $diff_list) = capture {
+    my ($out, $err, $is_first, $diff_list) = capture {
         Plack::Middleware::Debug::RefCounts->update_arena_counts
     };
     fail "Unexpected output $out" if $out;
