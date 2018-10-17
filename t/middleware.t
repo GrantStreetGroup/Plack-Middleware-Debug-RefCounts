@@ -23,16 +23,25 @@ test_psgi $app, sub {
     my $cb  = shift;
     my ($out, $err, $res) = capture { $cb->(GET '/') };
     is   $out, '', "middleware adds nothing to STDOUT";
-    isnt $err, '', "middleware debugs to STDERR";
+    is   $err, '', "middleware adds nothing to STDERR (first time)";
     is $res->code, 200, 'response status 200';
     my $html = $res->content;
-    like $res->content,
+    unlike $html,
+        qr/=== Reference growth counts ===/,
+        "HTML does not contain ref counts panel (first time)";
+
+    ($out, $err, $res) = capture { $cb->(GET '/') };
+    is   $out, '', "middleware adds nothing to STDOUT";
+    isnt $err, '', "middleware debugs to STDERR";
+    is $res->code, 200, 'response status 200';
+    $html = $res->content;
+    like $html,
         qr/=== Reference growth counts ===/,
         "HTML contains ref counts panel";
 
     {
         local $psgix_cleanup = 1;
-        unlike $res->content,
+        unlike $html,
                qr/\$PLACK_MW_DEBUG_REFCOUNTS_ON_CLEANUP is true/,
                'psgix.cleanup not used by default';
     }

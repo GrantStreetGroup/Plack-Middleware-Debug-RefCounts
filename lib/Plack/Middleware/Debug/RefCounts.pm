@@ -102,7 +102,7 @@ single worker anyway.
 
 =cut
 
-our $Arena_Refs = [];
+our $Arena_Refs = {};
 
 =head1 METHODS
 
@@ -145,22 +145,20 @@ Updates the arena counts and returns the lines via L</compare_arena_counts>.
 
 sub update_arena_counts {
     my $self = shift;
-    my $ref_a = $Arena_Refs;
-    ($Arena_Refs, my $diff_list) = $self->calculate_arena_refs($ref_a);
+    my $is_first  = !%$Arena_Refs;
+    my $diff_list = $self->calculate_arena_refs;
 
-    if ($ref_a) { return $self->compare_arena_counts($diff_list) }
-
+    return $self->compare_arena_counts($diff_list) unless $is_first;
     return;
 }
 
 =head2 calculate_arena_refs
 
-    (\@ref_b, \%diff_list) = $self->calculate_arena_refs(\@ref_a);
+    \%diff_list = $self->calculate_arena_refs;
 
 Walks the arena (of Perl variables) via L<Devel::Gladiator/walk_arena>, and
-catalogs all non-SCALAR/REFs into ref types and memory locations.
-Accepts an old ref list (from a previous call) as input,
-and returns both a new ref list and diff list.
+catalogs all non-SCALAR/REFs into ref types and memory locations.  Returns a
+diff list hashref.
 
 I<After> the first (initializing) run, if L</PLACK_MW_DEBUG_REFCOUNTS_DUMP_RE>
 is set, newly discovered matching variables will be dumped to C<STDERR>.
@@ -169,30 +167,32 @@ is set, newly discovered matching variables will be dumped to C<STDERR>.
 
 sub calculate_arena_refs {
     my $self    = shift;
-    my @ref_a   = @{ shift // [] };
     my $dump_re = $PLACK_MW_DEBUG_REFCOUNTS_DUMP_RE;
 
-    $dump_re = undef unless @ref_a;  # don't dump the first run
+    # To save on memory with this memory-intensive operation, we operate against
+    # $Arena_Ref as the sole storage mechanism for variable type/addresses.  The $all
+    # variable has the arena, but it's strictly a pointer without any memory usage.
+
+    $dump_re = undef unless %$Arena_Refs;  # don't dump the first run
 
     # refs start out "deleted", until they are found again
-    my %ref_list = map { $_ => -1 } @ref_a;
+    $Arena_Refs->{$_} = -1 for keys %$Arena_Refs;
 
     # This creates string address lists of all of the existing arena variables.
     # This is much cleaner and memory-friendly than storing real refs.
     my $all = Devel::Gladiator::walk_arena();
-    my @ref_b;
     foreach my $it (@$all) {
         my $type = ref $it;
 
         # There are so many of these that even cataloging the memory addresses
-        # of these is enough to overload memory footprint.
+        # of these is enough to cause an OOM in some systems.
         next if $type eq 'SCALAR' || $type eq 'REF';
 
         # Get the pointer address
         my $addr = sprintf '%x', refaddr $it;
         my $id   = "$type/$addr";
 
-        unless ($ref_list{$id}) {
+        unless ($Arena_Refs->{$id}) {
             # New ref
             if ($dump_re && $type =~ /$dump_re/) {
                 # Sometimes this dies. If so, just move on to the next one.
@@ -206,19 +206,18 @@ sub calculate_arena_refs {
             }
         }
         # either equalize to 0 for an existing ref, or go to 1 for a new one
-        $ref_list{$id}++;
-
-        push @ref_b, $id;
+        $Arena_Refs->{$id}++;
 
         $it = undef;
     }
     $all = undef;
 
     my %diff_list;
-    foreach my $id (keys %ref_list) {
+    foreach my $id (keys %$Arena_Refs) {
         my ($type, $addr) = split m!/!, $id, 2;
-        my $cmp = $ref_list{$id};
+        my $cmp = $Arena_Refs->{$id};
 
+        # Process the diff list
         $diff_list{$type}   //= [0,0,0];
         $diff_list{$type}[0] += $cmp;              # diff
         $diff_list{$type}[1]++ unless $cmp ==  1;  # count_a
@@ -228,11 +227,14 @@ sub calculate_arena_refs {
         if ($dump_re && $type =~ /$dump_re/ && $cmp == -1) {
             say STDERR "-$id";
         }
+
+        # Remove any deleted references
+        delete $Arena_Refs->{$id} if $cmp == -1;
     }
 
     say STDERR '' if $dump_re;
 
-    return \@ref_b, \%diff_list;
+    return \%diff_list;
 }
 
 =head2 compare_arena_counts
