@@ -9,3 +9,7 @@ Maintainer:      Grant Street Group <developers@grantstreet.com>
 0.90        2018-09-14
 
     - Initial release
+
+0.91        2018-11-14
+
+    - Update requirements to include Core modules

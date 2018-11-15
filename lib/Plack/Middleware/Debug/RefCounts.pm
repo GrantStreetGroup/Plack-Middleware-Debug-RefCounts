@@ -1,7 +1,7 @@
 package Plack::Middleware::Debug::RefCounts;
 
 our $AUTHORITY = 'cpan:GSG';
-our $VERSION   = '0.90';
+our $VERSION   = '0.91';
 
 use v5.10.1;
 use strict;
