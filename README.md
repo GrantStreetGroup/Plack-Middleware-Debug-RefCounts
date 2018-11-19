@@ -4,7 +4,7 @@ Plack::Middleware::Debug::RefCounts - reference count debugging for plack apps
 
 # VERSION
 
-version 0.90
+version 0.91
 
 # SYNOPSIS
 
