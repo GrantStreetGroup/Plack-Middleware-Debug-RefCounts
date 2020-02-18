@@ -1,7 +1,8 @@
 package Plack::Middleware::Debug::RefCounts;
 
 our $AUTHORITY = 'cpan:GSG';
-our $VERSION   = '0.91';
+# ABSTRACT: Reference count debugging for Plack apps
+# VERSION
 
 use v5.10.1;
 use strict;
@@ -17,16 +18,6 @@ use Env qw(
 use Scalar::Util qw( refaddr );
 
 use namespace::clean;  # don't export the above
-
-=encoding utf8
-
-=head1 NAME
-
-Plack::Middleware::Debug::RefCounts - reference count debugging for plack apps
-
-=head1 VERSION
-
-version 0.91
 
 =head1 SYNOPSIS
 
@@ -343,20 +334,6 @@ As of writing, is broken by a 2015 bug in L<B::Size2>
 (and neither module has been updated since 2014).
 
 =back
-
-=head1 AUTHOR
-
-Grant Street Group <developers@grantstreet.com>
-
-=head1 LICENSE AND COPYRIGHT
-
-Copyright 2018 Grant Street Group.
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of the the Artistic License (2.0). You may obtain a
-copy of the full license at:
-
-L<http://www.perlfoundation.org/artistic_license_2_0>
 
 =cut
 
