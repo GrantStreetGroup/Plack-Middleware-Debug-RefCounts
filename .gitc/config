@@ -1,7 +1,0 @@
-project_name: plack-middleware-debug-refcounts
-open onto: master
-jira_project: [ SM ]
-run_tests_on_submit: 1
-tests_to_run_on_submit:
-    - perl Makefile.PL
-    - make authorprove
