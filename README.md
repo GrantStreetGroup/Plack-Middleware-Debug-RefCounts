@@ -1,10 +1,10 @@
 # NAME
 
-Plack::Middleware::Debug::RefCounts
+Plack::Middleware::Debug::RefCounts - Reference count debugging for Plack apps
 
 # VERSION
 
-version v0.0.1
+version v0.910.1
 
 # SYNOPSIS
 
@@ -16,7 +16,7 @@ version v0.0.1
 
 This module aims to provide debugging tools to help identify memory leaks.
 
-It uses [Devel::Gladiator](https://metacpan.org/pod/Devel::Gladiator) to compare reference counts at the beginning and end
+It uses [Devel::Gladiator](https://metacpan.org/pod/Devel%3A%3AGladiator) to compare reference counts at the beginning and end
 of requests.
 
 To get the most out of this module, you should:
@@ -43,14 +43,6 @@ To get the most out of this module, you should:
 
     Preloading data prior to forking can help with this problem, but it can be hard
     to capture every single object or singleton that needs to be loaded.
-
-# NAME
-
-Plack::Middleware::Debug::RefCounts - reference count debugging for plack apps
-
-# VERSION
-
-version 0.91
 
 # ENVIRONMENT VARIABLES
 
@@ -100,7 +92,7 @@ first runthrough and a diff of hashes via ["compare\_arena\_counts"](#compare_ar
 
     \%diff_list = $self->calculate_arena_refs;
 
-Walks the arena (of Perl variables) via ["walk\_arena" in Devel::Gladiator](https://metacpan.org/pod/Devel::Gladiator#walk_arena), and
+Walks the arena (of Perl variables) via ["walk\_arena" in Devel::Gladiator](https://metacpan.org/pod/Devel%3A%3AGladiator#walk_arena), and
 catalogs all non-SCALAR/REFs into ref types and memory locations.  Returns a
 diff list hashref.
 
@@ -132,40 +124,26 @@ Example output:
 
 # SEE ALSO
 
-- [Devel::Gladiator](https://metacpan.org/pod/Devel::Gladiator)
+- [Devel::Gladiator](https://metacpan.org/pod/Devel%3A%3AGladiator)
 
     The tool used for leak hunting.
 
-- [Plack::Middleware::Debug](https://metacpan.org/pod/Plack::Middleware::Debug)
+- [Plack::Middleware::Debug](https://metacpan.org/pod/Plack%3A%3AMiddleware%3A%3ADebug)
 
     General debugging framework.
 
-- [Plack::Middleware::Debug::Memory](https://metacpan.org/pod/Plack::Middleware::Debug::Memory)
+- [Plack::Middleware::Debug::Memory](https://metacpan.org/pod/Plack%3A%3AMiddleware%3A%3ADebug%3A%3AMemory)
 
     Monitors RSS, which is not particularly helpful for tracking down memory leaks.
 
-- [Plack::Middleware::MemoryUsage](https://metacpan.org/pod/Plack::Middleware::MemoryUsage)
+- [Plack::Middleware::MemoryUsage](https://metacpan.org/pod/Plack%3A%3AMiddleware%3A%3AMemoryUsage)
 
-    As of writing, is broken by a 2015 bug in [B::Size2](https://metacpan.org/pod/B::Size2)
+    As of writing, is broken by a 2015 bug in [B::Size2](https://metacpan.org/pod/B%3A%3ASize2)
     (and neither module has been updated since 2014).
 
 # AUTHOR
 
-Grant Street Group &lt;developers@grantstreet.com>
-
-# LICENSE AND COPYRIGHT
-
-Copyright 2018 Grant Street Group.
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of the the Artistic License (2.0). You may obtain a
-copy of the full license at:
-
-[http://www.perlfoundation.org/artistic\_license\_2\_0](http://www.perlfoundation.org/artistic_license_2_0)
-
-# AUTHOR
-
-Grant Street Group &lt;developers@grantstreet.com>
+Grant Street Group <developers@grantstreet.com>
 
 # COPYRIGHT AND LICENSE
 
